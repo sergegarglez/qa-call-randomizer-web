@@ -1,11 +1,19 @@
-// Runs test_sampling.py inside the same Pyodide build the browser uses,
-// so the engine is verified against the exact pandas/openpyxl the site ships.
-import { loadPyodide } from "pyodide";
-import { readFileSync, existsSync } from "node:fs";
+// Runs test_sampling.py inside the self-hosted Pyodide bundle the browser uses (public/pyodide/,
+// produced by build.mjs), so the engine is verified against the exact pandas/openpyxl the site ships.
+import { loadPyodide } from "./public/pyodide/pyodide.mjs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
 
-const py = await loadPyodide();
-await py.loadPackage(["pandas", "micropip"]);
-await py.pyimport("micropip").install("openpyxl==3.1.5");
+const bundle = resolve("public/pyodide");
+const before = readdirSync(bundle).sort().join();
+const py = await loadPyodide({ indexURL: `${bundle}/` });
+await py.loadPackage(["pandas", "xlrd", "openpyxl"]);
+// Node's Pyodide silently downloads missing wheels into indexURL; a changed listing means the bundle is incomplete.
+if (readdirSync(bundle).sort().join() !== before) {
+  console.error("[FAIL] public/pyodide is incomplete - Pyodide had to download extra files");
+  process.exit(1);
+}
+console.log("[PASS] all packages loaded from the self-hosted bundle");
 
 const home = "/home/pyodide";
 py.FS.writeFile(`${home}/qa_core.py`, readFileSync("public/qa_core.py"));

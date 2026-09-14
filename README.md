@@ -25,20 +25,25 @@ and in Pyodide for seed `20260820`).
 | `test_pyodide.mjs` | Runs that suite + a bridge check inside the same Pyodide build the site uses |
 | `make_sample_data.py` | Generates `sample_call_detail.xlsx` (12,500 rows / 42 agents) for testing |
 
+| `build.mjs` | Copies Pyodide + all wheels into `public/pyodide/` (sha256-verified) so the site is self-hosted |
+
 ## Develop
 
 ```bash
 npm install
-npm test          # 42 engine checks + bridge check, inside Pyodide (needs sample_call_detail.xlsx for E2E)
-npm run dev       # http://localhost:8000
+npm test          # build, then 42 engine checks + bridge check inside the bundled Pyodide (E2E needs sample_call_detail.xlsx)
+npm run dev       # build, then http://localhost:8000
 ```
 
 ## Deploy
 
-Static site, no build step. Vercel serves `public/`. Every push to `main` on GitHub redeploys.
+Vercel runs `npm run build` (see `vercel.json`) and serves `public/`. Every push to `main` on
+GitHub redeploys. The build downloads the wheels from jsdelivr/PyPI **on Vercel's build machine**;
+visitors' browsers only ever talk to the site's own domain. To upgrade Pyodide, bump the
+`pyodide` version in `package.json` and re-run `npm test`.
 
 ## Differences from the desktop app
 
 - **Download Excel Sample** saves through the browser instead of writing to `Documents\QA Call Randomizer\`; *Open Output Folder* is gone.
-- First visit downloads the Python runtime (~15 MB, from `cdn.jsdelivr.net`, plus `openpyxl` from PyPI); later visits use the browser cache. Networks that block those hosts will show a load error.
+- First visit downloads the Python runtime (~22 MB) from the site itself; later visits revalidate from the browser cache. No third-party host is contacted, so corporate firewalls that allow the site allow the app.
 - Run timestamps use the browser's local time.

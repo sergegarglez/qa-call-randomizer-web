@@ -1,14 +1,14 @@
 // Runs the Python engine (qa_core.py via bridge.py) in Pyodide, off the UI thread.
 // The uploaded file only ever exists in this worker's memory; nothing is sent to a server.
-// Module worker: importScripts() to a CDN is blocked by some browsers/proxies, import is not.
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pyodide.mjs";
+// Pyodide and every wheel are self-hosted in ./pyodide/ (built by build.mjs), so the site
+// works on networks that block cdn.jsdelivr.net or PyPI. openpyxl is added to that lock file.
+import { loadPyodide } from "./pyodide/pyodide.mjs";
 
 const HOME = "/home/pyodide";
 
 const ready = (async () => {
   const py = await loadPyodide();
-  await py.loadPackage(["pandas", "micropip", "xlrd"]);
-  await py.pyimport("micropip").install("openpyxl==3.1.5");
+  await py.loadPackage(["pandas", "xlrd", "openpyxl"]);
   for (const f of ["qa_core.py", "bridge.py"]) {
     const res = await fetch(f, { cache: "no-cache" });
     if (!res.ok) throw new Error(`Could not fetch ${f}: HTTP ${res.status}`);
