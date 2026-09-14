@@ -1,0 +1,13 @@
+{
+  "name": "qa-call-randomizer-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node test_pyodide.mjs",
+    "dev": "python3 -m http.server 8000 --directory public"
+  },
+  "devDependencies": {
+    "pyodide": "314.0.6"
+  }
+}
